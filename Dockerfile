@@ -1,18 +1,23 @@
+# Usar a imagem oficial do Python 3.12
 FROM python:3.12
-# Instalando o Poetry
+
+# Instalar Poetry corretamente
 RUN pip install poetry
 
-# Copiar o conteúdo do diretório atual para o contêiner
-COPY . /src
-
-# Definir o diretório de trabalho
+# Definir diretório de trabalho
 WORKDIR /src
 
-# Instalar as dependencias do projeto com Poetry
-RUN poetry install
+# Copiar arquivos de dependências primeiro (otimiza cache)
+COPY pyproject.toml poetry.lock ./
 
-# Expor a porta em que a aplicaçao estará escutando
+# Instalar dependências do projeto
+RUN poetry install --no-root
+
+# Copiar restante do código
+COPY . .
+
+# Expor a porta 8501
 EXPOSE 8501
 
-# Definir o entrypoint para executar o servidor
-ENTRYPOINT [ "poetry", "run", "fastapi dev", "main:app", "--host", "0.0.0.0", "--port", "8501" ]
+# Definir entrypoint para rodar o FastAPI com uvicorn
+ENTRYPOINT ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8501"]
